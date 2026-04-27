@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from feature_engineering import engineer_features, compute_weather_score
-from data_ingestion import fetch_weather, fetch_holiday, get_routes
+from data_ingestion import fetch_weather, fetch_holiday, fetch_market_price, get_routes
 
 def simulate_behavioral_dataset(n_samples: int = 5000, seed: int = 42) -> pd.DataFrame:
     rng = np.random.default_rng(seed)
@@ -18,9 +18,12 @@ def simulate_behavioral_dataset(n_samples: int = 5000, seed: int = 42) -> pd.Dat
         w_orig = fetch_weather(route["origin"], depart_date.strftime("%Y-%m-%d"))
         w_dest = fetch_weather(route["destination"], depart_date.strftime("%Y-%m-%d"))
         holiday = fetch_holiday(depart_date.strftime("%Y-%m-%d"))
+        market_price = fetch_market_price(
+            route["origin"], route["destination"], depart_date.strftime("%Y-%m-%d")
+        )
         
         w_score = compute_weather_score(w_orig, w_dest)
-        price = rng.uniform(120, 1800)
+        price = rng.uniform(max(80, market_price * 0.7), max(120, market_price * 1.5))
         cap = route["capacity"]
         seats_rem = rng.integers(10, cap + 1)
         
@@ -34,7 +37,8 @@ def simulate_behavioral_dataset(n_samples: int = 5000, seed: int = 42) -> pd.Dat
         
         # conversion_rate: ↓ as price ↑, ↑ as seats_remaining ↓ (urgency)
         scarcity = 1 + 0.6 * (1 - seats_rem / cap)
-        price_penalty = np.exp(-price / 220)
+        mid_price = max(80.0, float(market_price))
+        price_penalty = np.exp(-price / mid_price)
         conv_rate = price_penalty * scarcity
         conv_rate = np.clip(conv_rate * rng.uniform(0.8, 1.1), 0.01, 0.85)
         
@@ -46,6 +50,7 @@ def simulate_behavioral_dataset(n_samples: int = 5000, seed: int = 42) -> pd.Dat
         rows.append({
             "route_id": route["route_id"],
             "price": price,
+            "market_price": round(float(market_price), 2),
             "seat_capacity": cap,
             "seats_remaining": seats_rem,
             "user_views": int(views),

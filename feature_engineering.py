@@ -45,12 +45,12 @@ def engineer_features(df_raw: pd.DataFrame, depart_dates: list, route_data: list
     df["day_of_week"] = df["depart_date"].dt.dayofweek
     
     # Initialize other features with defaults (will be populated by data_generator)
-    for col in ["price", "seats_remaining", "user_views", "conversion_rate", "weather_score"]:
+    for col in ["price", "market_price", "seats_remaining", "user_views", "conversion_rate", "weather_score"]:
         df[col] = 0.0
     df["demand"] = 0
     
     return df[df.columns.intersection([
-        "price", "days_to_departure", "route_id", "seat_capacity", 
+        "price", "market_price", "days_to_departure", "route_id", "seat_capacity", 
         "seats_remaining", "user_views", "conversion_rate", "weather_score", 
         "holiday_flag", "day_of_week", "demand"
     ])]

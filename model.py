@@ -12,7 +12,7 @@ except Exception:
     HAS_LIGHTGBM = False
 
 FEATURES = [
-    "price", "days_to_departure", "route_id", "seat_capacity", 
+    "price", "market_price", "days_to_departure", "route_id", "seat_capacity", 
     "seats_remaining", "user_views", "conversion_rate", "weather_score", 
     "holiday_flag", "day_of_week"
 ]

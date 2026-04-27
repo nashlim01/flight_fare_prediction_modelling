@@ -60,6 +60,13 @@ Or place it in a `.env` file at project root:
 OPENWEATHER_API_KEY=your_key_here
 ```
 
+Optional (for market base fare via Amadeus API):
+
+```env
+AMADEUS_CLIENT_ID=your_amadeus_client_id
+AMADEUS_CLIENT_SECRET=your_amadeus_client_secret
+```
+
 ## Route Input From Excel
 
 You can provide your own route master via `routes.xlsx` in the project root.
@@ -109,6 +116,7 @@ Outputs:
 
 - API responses are cached in `api_cache/`.
 - Route geocoding is cached too.
+- Market base fare (`market_{origin}_{destination}_{date}`) is cached too.
 - If you update routes or want fresh API results:
   - rerun Streamlit
   - optionally clear relevant files in `api_cache/`

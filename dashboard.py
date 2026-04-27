@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from data_generator import simulate_behavioral_dataset
 from model import train_demand_model, FEATURES
 from optimizer import optimize_price
-from data_ingestion import get_routes, get_routes_fingerprint
+from data_ingestion import get_routes, get_routes_fingerprint, fetch_market_price
 
 
 st.set_page_config(
@@ -214,15 +214,27 @@ with status_col:
 
 
 if run_forecast:
+    depart_date = (pd.Timestamp.now().normalize() + pd.Timedelta(days=days)).strftime("%Y-%m-%d")
+    market_price = fetch_market_price(
+        selected_route["origin"], selected_route["destination"], depart_date
+    )
+
     scenario = default_scenario.copy()
     scenario["route_id"] = route_id
+    scenario["market_price"] = market_price
     scenario["seat_capacity"] = selected_route["capacity"]
     scenario["days_to_departure"] = days
     scenario["seats_remaining"] = seats
     scenario["weather_score"] = weather
     scenario["holiday_flag"] = int(holiday)
 
-    opt = optimize_price(scenario, model, price_range[0], price_range[1])
+    opt = optimize_price(
+        scenario,
+        model,
+        price_min=price_range[0],
+        price_max=price_range[1],
+        market_price=market_price,
+    )
     seats_remaining = float(scenario["seats_remaining"].iloc[0])
     load_factor = (opt["expected_demand"] / max(seats_remaining, 1.0)) * 100
     rev_per_seat = opt["expected_revenue"] / max(seats_remaining, 1.0)
@@ -239,7 +251,9 @@ if run_forecast:
 
     st.caption(
         f"Model RMSE: {rmse:.2f} | Revenue per remaining seat: RM {rev_per_seat:.2f} | "
-        f"Demand drop (min to max price): {demand_drop:.1f}%"
+        f"Demand drop (min to max price): {demand_drop:.1f}% | "
+        f"Market base fare: RM {opt['market_price']:.2f} | "
+        f"Price band used: RM {opt['price_min_used']:.0f} - RM {opt['price_max_used']:.0f}"
     )
 
     sweep_df = build_sweep_df(opt, seats_remaining)
