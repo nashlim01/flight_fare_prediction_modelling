@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from data_generator import simulate_behavioral_dataset
 from model import train_demand_model, FEATURES
 from optimizer import optimize_price
+from data_ingestion import get_routes
 import matplotlib
 matplotlib.use("Agg")  # Headless fallback, remove for local GUI
 
@@ -64,7 +65,8 @@ if __name__ == "__main__":
     
     print("🎯 Defining Scenario & Running Optimization...")
     # Pick a realistic mid-range scenario
-    base_row = df[(df["route_id"] == 101) & (df["days_to_departure"] == 30)].iloc[0].copy()
+    first_route_id = get_routes()[0]["route_id"]
+    base_row = df[(df["route_id"] == first_route_id) & (df["days_to_departure"] == 30)].iloc[0].copy()
     base_row = base_row[FEATURES]
     
     opt = optimize_price(base_row, trained_model, price_min=80, price_max=1800)

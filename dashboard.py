@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from data_generator import simulate_behavioral_dataset
 from model import train_demand_model, FEATURES
 from optimizer import optimize_price
-from data_ingestion import get_routes
+from data_ingestion import get_routes, get_routes_fingerprint
 
 
 st.set_page_config(
@@ -130,7 +130,7 @@ route_labels = {r["route_id"]: f"{r['origin']} -> {r['destination']} (Route {r['
 
 
 @st.cache_resource
-def load_pipeline():
+def load_pipeline(routes_fingerprint: str):
     df = simulate_behavioral_dataset(4000, seed=123)
     model, rmse = train_demand_model(df)
     return model, rmse, df.sample(1, random_state=42)[FEATURES]
@@ -170,7 +170,7 @@ def summarize_quartiles(sweep_df: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-model, rmse, default_scenario = load_pipeline()
+model, rmse, default_scenario = load_pipeline(get_routes_fingerprint())
 
 st.write("")
 ctrl_col, status_col = st.columns([1.15, 1.0], vertical_alignment="top")
