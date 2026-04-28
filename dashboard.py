@@ -7,6 +7,7 @@ from data_generator import simulate_behavioral_dataset
 from model import train_demand_model, FEATURES
 from optimizer import optimize_price
 from data_ingestion import get_routes, get_routes_fingerprint, fetch_market_price
+from rag_insights import get_vector_db, build_runtime_query, generate_pricing_insight
 
 
 st.set_page_config(
@@ -171,9 +172,10 @@ def summarize_quartiles(sweep_df: pd.DataFrame) -> pd.DataFrame:
 
 
 model, rmse, default_scenario = load_pipeline(get_routes_fingerprint())
+vector_db = get_vector_db()
 
 st.write("")
-ctrl_col, status_col = st.columns([1.15, 1.0], vertical_alignment="top")
+ctrl_col, status_col = st.columns([1.15, 1.0])
 
 with ctrl_col:
     with st.container(border=True):
@@ -256,13 +258,39 @@ if run_forecast:
         f"Price band used: RM {opt['price_min_used']:.0f} - RM {opt['price_max_used']:.0f}"
     )
 
+
+    route_key = f"{selected_route['origin']}-{selected_route['destination']}"
+    query = build_runtime_query(
+        route=route_key,
+        days=days,
+        weather=float(weather),
+        holiday=bool(holiday),
+        price=float(opt["optimal_price"]),
+        demand=float(opt["expected_demand"]),
+        load_factor=float(load_factor),
+    )
+    retrieved_docs = vector_db.similarity_search(query, k=5)
+    rag_result = generate_pricing_insight(
+        route_key=route_key,
+        scenario={
+            "route": route_key,
+            "days_to_departure": days,
+            "weather_score": float(weather),
+            "holiday": bool(holiday),
+            "load_factor": float(load_factor),
+            "market_price": float(market_price),
+        },
+        optimizer_out=opt,
+        retrieved_docs=retrieved_docs,
+    )
+
     sweep_df = build_sweep_df(opt, seats_remaining)
     quartile_summary = summarize_quartiles(sweep_df)
     best_quartile = quartile_summary.loc[
         quartile_summary["avg_revenue_rm"].idxmax(), "price_quartile"
     ]
 
-    tab1, tab2, tab3 = st.tabs(["Curves", "Quartile Insights", "Forecast Table"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Curves", "Quartile Insights", "Forecast Table", "RAG Insight"])
 
     with tab1:
         v1, v2 = st.columns(2)
@@ -321,5 +349,25 @@ if run_forecast:
             }
         )
         st.dataframe(show_df, use_container_width=True, hide_index=True)
+
+
+    with tab4:
+        st.subheader("AI Pricing Insight")
+        st.write(rag_result["explanation"])
+
+        st.subheader("Market Validation")
+        st.write(rag_result["market_validation"])
+        st.write(f"Confidence: **{rag_result['confidence']}**")
+
+        st.subheader("Warnings / Recommendations")
+        if rag_result["warnings"]:
+            for w in rag_result["warnings"]:
+                st.warning(w)
+        else:
+            st.success("No critical pricing anomalies detected for this scenario.")
+
+        if rag_result["recommendations"]:
+            for r in rag_result["recommendations"]:
+                st.info(r)
 else:
     st.info("Set your scenario on top and click Run Forecast.")

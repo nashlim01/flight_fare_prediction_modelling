@@ -29,7 +29,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV "/Users/nash/Desktop/Flight_Fare_Prediction_Modelling/venv"
+set -gx VIRTUAL_ENV "/Users/nash/Desktop/FFPM/Flight_Fare_Prediction_Modelling/venv"
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/bin" $PATH

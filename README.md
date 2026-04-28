@@ -6,6 +6,7 @@ Airline demand forecasting and price optimization project with:
 - RM (Malaysian Ringgit) pricing outputs
 - Interactive Streamlit dashboard
 - Excel-based route input
+- RAG-based explainability layer for pricing decisions
 
 ## What This Project Does
 
@@ -67,6 +68,12 @@ AMADEUS_CLIENT_ID=your_amadeus_client_id
 AMADEUS_CLIENT_SECRET=your_amadeus_client_secret
 ```
 
+Optional (for LLM-generated RAG explanation text):
+
+```env
+OPENAI_API_KEY=your_openai_api_key
+```
+
 ## Route Input From Excel
 
 You can provide your own route master via `routes.xlsx` in the project root.
@@ -101,6 +108,34 @@ Dashboard includes:
 - Curves tab (revenue vs price, demand vs price)
 - Quartile insights (Q1 to Q4 purchase rate + revenue metrics)
 - Forecast table (full sweep detail)
+- RAG Insight tab:
+  - AI Pricing Insight (plain-English rationale)
+  - Market Validation (benchmark and anchor checks)
+  - Warnings / Recommendations (risk flags and actions)
+
+## RAG Layer (Explainability)
+
+The dashboard includes a Retrieval-Augmented Generation (RAG) component.
+
+How it works:
+- Builds a runtime query from scenario + model outputs
+- Retrieves top-k relevant pricing heuristics and route benchmark docs
+- Produces decision-support output:
+  - why the price is selected
+  - market comparison
+  - anomaly/warning signals
+  - tactical recommendations
+
+Implementation:
+- `rag_insights.py` contains:
+  - knowledge base documents
+  - vector retrieval (`similarity_search`)
+  - explanation + validation logic
+- `dashboard.py` renders this output in the `RAG Insight` tab
+
+Note:
+- RAG does not replace predictions or optimizer logic.
+- It adds interpretability and validation on top.
 
 ## Run The CLI Pipeline
 
