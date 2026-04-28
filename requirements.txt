@@ -1,9 +1,7 @@
---only-binary=:all:
-
 numpy==1.26.4
 pandas==2.1.4
 scikit-learn==1.4.1.post1
-lightgbm==4.3.0
+lightgbm==3.3.5
 xgboost==2.0.3
 requests==2.31.0
 matplotlib==3.8.3
